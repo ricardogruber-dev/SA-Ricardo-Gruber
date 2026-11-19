@@ -1,0 +1,70 @@
+<!-- Define o documento como HTML5 e o idioma como português do Brasil -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<!-- Define a codificação de caracteres e a escala inicial para responsividade -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Título da aba do navegador -->
+<title>Histórico do estoque – Oficina</title>
+<!-- Importa a folha de estilos da pasta static usando url_for do Flask -->
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<!-- Menu de navegação principal com atributo de acessibilidade -->
+<nav aria-label="Menu principal">
+  <div class="marca"><strong>OFICINA</strong><span>Consertos e estoque</span></div>
+  <!-- Links gerados dinamicamente pelas rotas do Flask -->
+  <a href="{{ url_for('index') }}">Início</a>
+  <a href="{{ url_for('cadastrar') }}">Cadastrar conserto</a>
+  <a href="{{ url_for('listar_consertos') }}">Consertos</a>
+  <a href="{{ url_for('estoque') }}">Estoque</a>
+  <!-- Link da página atual destacado com classe CSS e aria-current -->
+  <a href="{{ url_for('historico') }}" class="ativo" aria-current="page">Histórico do estoque</a>
+</nav>
+
+<!-- Área de conteúdo principal da página -->
+<main>
+
+<!-- Bloco Jinja2 que captura e exibe mensagens flash enviadas pelo back-end -->
+{% with mensagens = get_flashed_messages(with_categories=true) %}
+  {% if mensagens %}
+    <div class="mensagens">
+      {% for categoria, msg in mensagens %}
+        <!-- A categoria define a classe CSS de estilo do alerta (ex: erro, sucesso) -->
+        <div class="alerta {{ categoria }}">{{ msg }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<!-- Seção de exibição do registro de entradas e saídas do estoque -->
+<section id="historico">
+  <!-- Cabeçalho da seção com título e descrição da ordenação -->
+  <div class="cab"><div><h1>Histórico do estoque</h1><p>Da movimentação mais recente para a mais antiga.</p></div></div>
+  <div class="caixa">
+    <!-- Verifica se há movimentações registradas para exibir -->
+    {% if movimentacoes %}
+      {% for m in movimentacoes %}
+        <!-- Define a classe CSS ('entrada' ou 'saida') ignorando maiúsculas/minúsculas com casefold() -->
+        {% set classe_mov = 'entrada' if m.tipo.casefold() == 'entrada' else 'saida' %}
+        <!-- Linha com os detalhes da movimentação: data/hora, tipo, peça/quantidade e motivo -->
+        <div class="linha-mov">
+          <time>{{ m.data.strftime('%d/%m/%Y %H:%M') }}</time>
+          <span class="{{ classe_mov }}">{{ m.tipo }}</span>
+          <span>{{ m.nome_peca }} · {{ m.quantidade }} un.</span>
+          <span>{{ m.motivo }}</span>
+        </div>
+      {% endfor %}
+    {% else %}
+      <!-- Mensagem exibida caso ainda não exista nenhuma movimentação no histórico -->
+      <p style="margin:0">Nenhuma movimentação registrada.</p>
+    {% endif %}
+  </div>
+</section>
+
+</main>
+
+</body>
+</html>

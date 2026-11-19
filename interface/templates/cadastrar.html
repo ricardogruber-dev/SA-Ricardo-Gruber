@@ -1,0 +1,75 @@
+<!-- Define o documento como HTML5 e o idioma como português do Brasil -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<!-- Define a codificação de caracteres e a escala inicial para responsividade -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Título da aba do navegador -->
+<title>Cadastrar conserto – Oficina</title>
+<!-- Importa a folha de estilos da pasta static usando url_for do Flask -->
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<!-- Menu de navegação principal com atributo de acessibilidade -->
+<nav aria-label="Menu principal">
+  <div class="marca"><strong>OFICINA</strong><span>Consertos e estoque</span></div>
+  <!-- Links gerados dinamicamente pelas rotas do Flask -->
+  <a href="{{ url_for('index') }}">Início</a>
+  <!-- Link da página atual destacado com classe CSS e aria-current -->
+  <a href="{{ url_for('cadastrar') }}" class="ativo" aria-current="page">Cadastrar conserto</a>
+  <a href="{{ url_for('listar_consertos') }}">Consertos</a>
+  <a href="{{ url_for('estoque') }}">Estoque</a>
+  <a href="{{ url_for('historico') }}">Histórico do estoque</a>
+</nav>
+
+<!-- Área de conteúdo principal da página -->
+<main>
+
+<!-- Bloco Jinja2 que captura e exibe mensagens flash enviadas pelo back-end -->
+{% with mensagens = get_flashed_messages(with_categories=true) %}
+  {% if mensagens %}
+    <div class="mensagens">
+      {% for categoria, msg in mensagens %}
+        <!-- A categoria define a classe CSS de estilo do alerta (ex: erro, sucesso) -->
+        <div class="alerta {{ categoria }}">{{ msg }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<!-- Seção do formulário de cadastro de conserto -->
+<section id="cadastrar">
+  <div class="cab"><div><h1>Cadastrar conserto</h1><p>O conserto é cadastrado como Pendente.</p></div></div>
+  <!-- Formulário enviado via POST para a rota 'cadastrar' -->
+  <form class="caixa" action="{{ url_for('cadastrar') }}" method="post">
+    <div class="campos">
+      <!-- Campos obrigatórios que mantêm os valores preenchidos (form_dados) caso ocorra erro no envio -->
+      <label>Cliente <input name="cliente" value="{{ form_dados.cliente if form_dados else '' }}" required></label>
+      <label>Veículo (modelo/placa) <input name="veiculo" value="{{ form_dados.veiculo if form_dados else '' }}" required></label>
+      <label>Mecânico responsável <input name="mecanico" value="{{ form_dados.mecanico if form_dados else '' }}" required></label>
+      <!-- Lista de seleção preenchida dinamicamente pela variável 'problemas' -->
+      <label>Problema apresentado
+        <select name="problema" id="problema" required>
+          <option value="">Qual problema o veículo apresenta?</option>
+          {% for p in problemas %}
+            <option value="{{ p }}" {% if form_dados and form_dados.problema == p %}selected{% endif %}>{{ p }}</option>
+          {% endfor %}
+          <!-- Opção que libera o campo de descrição livre abaixo -->
+          <option value="outro" {% if form_dados and form_dados.problema == 'outro' %}selected{% endif %}>Outro problema (digitar descrição)</option>
+        </select>
+      </label>
+    </div>
+    <!-- Campo oculto por padrão; aparece apenas se a opção 'outro' estiver selecionada -->
+    <label id="outro-campo" {% if not (form_dados and form_dados.problema == 'outro') %}hidden{% endif %}>
+      Descreva o problema apresentado
+      <textarea name="problema_outro">{{ form_dados.problema_outro if form_dados else '' }}</textarea>
+    </label>
+    <!-- Botões de submissão e cancelamento -->
+    <div class="botoes">
+      <button class="destaque" type="submit">Cadastrar conserto</button>
+      <a class="btn sec" href="{{ url_for('listar_consertos') }}">Cancelar</a>
+    </div>
+  </form>
+</section>

@@ -1,0 +1,67 @@
+<!-- Define o documento como HTML5 e o idioma como português do Brasil -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<!-- Define a codificação de caracteres e a escala inicial para responsividade -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Título da aba do navegador -->
+<title>Início – Oficina</title>
+<!-- Importa a folha de estilos da pasta static usando url_for do Flask -->
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<!-- Menu de navegação principal com atributo de acessibilidade -->
+<nav aria-label="Menu principal">
+  <div class="marca"><strong>OFICINA</strong><span>Consertos e estoque</span></div>
+  <!-- Link da página atual destacado com classe CSS e aria-current -->
+  <a href="{{ url_for('index') }}" class="ativo" aria-current="page">Início</a>
+  <!-- Links gerados dinamicamente pelas rotas do Flask -->
+  <a href="{{ url_for('cadastrar') }}">Cadastrar conserto</a>
+  <a href="{{ url_for('listar_consertos') }}">Consertos</a>
+  <a href="{{ url_for('estoque') }}">Estoque</a>
+  <a href="{{ url_for('historico') }}">Histórico do estoque</a>
+</nav>
+
+<!-- Área de conteúdo principal da página -->
+<main>
+
+<!-- Bloco Jinja2 que captura e exibe mensagens flash enviadas pelo back-end -->
+{% with mensagens = get_flashed_messages(with_categories=true) %}
+  {% if mensagens %}
+    <div class="mensagens">
+      {% for categoria, msg in mensagens %}
+        <!-- A categoria define a classe CSS de estilo do alerta (ex: erro, sucesso) -->
+        <div class="alerta {{ categoria }}">{{ msg }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<!-- Seção inicial (painel de visão geral da oficina) -->
+<section id="inicio">
+  <div class="cab"><div><h1>Início</h1><p>Resumo da oficina.</p></div></div>
+  <!-- Grade de cartões com os indicadores gerais vindos do objeto 'resumo' -->
+  <div class="resumo">
+    <div><span class="n">{{ resumo.total_consertos }}</span><small>Consertos cadastrados</small></div>
+    <!-- Classes 'p', 'e' e 'c' aplicam cores específicas para cada status -->
+    <div class="p"><span class="n">{{ resumo.pendentes }}</span><small>Pendente</small></div>
+    <div class="e"><span class="n">{{ resumo.em_execucao }}</span><small>Em execução</small></div>
+    <div class="c"><span class="n">{{ resumo.concluidos }}</span><small>Concluído</small></div>
+    <div><span class="n">{{ resumo.faturamento }}</span><small>Faturamento concluído</small></div>
+    <div><span class="n">{{ resumo.valor_estoque }}</span><small>Valor em estoque</small></div>
+  </div>
+  <!-- Grade de cartões de acesso rápido para as principais funcionalidades do sistema -->
+  <div class="atalhos">
+    <a href="{{ url_for('cadastrar') }}"><b>Cadastrar conserto</b><span>Registrar um novo conserto.</span></a>
+    <a href="{{ url_for('listar_consertos') }}"><b>Consertos</b><span>Listar, buscar e realizar / acompanhar consertos.</span></a>
+    <a href="{{ url_for('estoque') }}"><b>Estoque</b><span>Ver o estoque e adicionar peças.</span></a>
+    <a href="{{ url_for('historico') }}"><b>Histórico do estoque</b><span>Entradas e saídas de peças.</span></a>
+  </div>
+</section>
+
+</main>
+
+</body>
+</html>

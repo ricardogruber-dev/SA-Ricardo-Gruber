@@ -1,0 +1,93 @@
+<!-- Define o documento como HTML5 e o idioma como português do Brasil -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<!-- Define a codificação de caracteres e a escala inicial para responsividade -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Título da aba do navegador -->
+<title>Estoque – Oficina</title>
+<!-- Importa a folha de estilos da pasta static usando url_for do Flask -->
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<!-- Menu de navegação principal com atributo de acessibilidade -->
+<nav aria-label="Menu principal">
+  <div class="marca"><strong>OFICINA</strong><span>Consertos e estoque</span></div>
+  <!-- Links gerados dinamicamente pelas rotas do Flask -->
+  <a href="{{ url_for('index') }}">Início</a>
+  <a href="{{ url_for('cadastrar') }}">Cadastrar conserto</a>
+  <a href="{{ url_for('listar_consertos') }}">Consertos</a>
+  <!-- Link da página atual destacado com classe CSS e aria-current -->
+  <a href="{{ url_for('estoque') }}" class="ativo" aria-current="page">Estoque</a>
+  <a href="{{ url_for('historico') }}">Histórico do estoque</a>
+</nav>
+
+<!-- Área de conteúdo principal da página -->
+<main>
+
+<!-- Bloco Jinja2 que captura e exibe mensagens flash enviadas pelo back-end -->
+{% with mensagens = get_flashed_messages(with_categories=true) %}
+  {% if mensagens %}
+    <div class="mensagens">
+      {% for categoria, msg in mensagens %}
+        <!-- A categoria define a classe CSS de estilo do alerta (ex: erro, sucesso) -->
+        <div class="alerta {{ categoria }}">{{ msg }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<!-- Seção de visualização e cadastro de peças no estoque -->
+<section id="estoque">
+  <!-- Cabeçalho da seção com título e o valor total acumulado em custo do estoque -->
+  <div class="cab">
+    <div><h1>Estoque</h1><p>Peças cadastradas e suas quantidades e preços. Total em custo: {{ valor_estoque }}</p></div>
+  </div>
+  <!-- Contêiner com rolagem horizontal para adaptar a tabela em telas menores -->
+  <div class="caixa rolagem">
+    <table>
+      <!-- Cabeçalho das colunas da tabela (valores numéricos alinhados via classe 'num') -->
+      <thead><tr><th>ID</th><th>Peça</th><th class="num">Qtd.</th><th class="num">Custo</th><th class="num">Venda</th></tr></thead>
+      <tbody>
+        <!-- Verifica se existem peças cadastradas no estoque -->
+        {% if pecas %}
+          {% for p in pecas %}
+            <tr>
+              <td>{{ p.id }}</td>
+              <td>{{ p.nome }}</td>
+              <td class="num">{{ p.quantidade }}</td>
+              <!-- Formata os preços de custo e venda usando a função auxiliar formatar_moeda -->
+              <td class="num">{{ formatar_moeda(p.preco_custo) }}</td>
+              <td class="num">{{ formatar_moeda(p.preco_venda) }}</td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <!-- Linha exibida caso nenhuma peça esteja cadastrada -->
+          <tr><td colspan="5">Estoque vazio.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+  <!-- Formulário enviado via POST para cadastrar uma nova peça ou somar unidades a uma existente -->
+  <form class="caixa" action="{{ url_for('estoque') }}" method="post">
+    <h2>Adicionar peça ao estoque</h2>
+    <p class="dica" style="margin:0">Se a peça já existir, as unidades são somadas.</p>
+    <div class="campos">
+      <label>Nome da peça <input name="nome" required></label>
+      <!-- Campo numérico exigindo quantidade mínima de 1 unidade -->
+      <label>Quantidade <input type="number" name="quantidade" min="1" required></label>
+      <!-- Campos de valores monetários com inputmode="decimal" para facilitar digitação no celular -->
+      <label>Preço de custo unitário (R$) <input name="custo" inputmode="decimal" required></label>
+      <label>Preço de venda unitário (R$) <input name="venda" inputmode="decimal" required></label>
+    </div>
+    <!-- Botão de envio do formulário -->
+    <div class="botoes"><button class="destaque" type="submit">Adicionar ao estoque</button></div>
+  </form>
+</section>
+
+</main>
+
+</body>
+</html>

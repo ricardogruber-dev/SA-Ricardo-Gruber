@@ -1,0 +1,98 @@
+<!-- Define o documento como HTML5 e o idioma como português do Brasil -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<!-- Define a codificação de caracteres e a escala inicial para responsividade -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Título da aba do navegador -->
+<title>Consertos – Oficina</title>
+<!-- Importa a folha de estilos da pasta static usando url_for do Flask -->
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<!-- Menu de navegação principal com atributo de acessibilidade -->
+<nav aria-label="Menu principal">
+  <div class="marca"><strong>OFICINA</strong><span>Consertos e estoque</span></div>
+  <!-- Links gerados dinamicamente pelas rotas do Flask -->
+  <a href="{{ url_for('index') }}">Início</a>
+  <a href="{{ url_for('cadastrar') }}">Cadastrar conserto</a>
+  <!-- Link da página atual destacado com classe CSS e aria-current -->
+  <a href="{{ url_for('listar_consertos') }}" class="ativo" aria-current="page">Consertos</a>
+  <a href="{{ url_for('estoque') }}">Estoque</a>
+  <a href="{{ url_for('historico') }}">Histórico do estoque</a>
+</nav>
+
+<!-- Área de conteúdo principal da página -->
+<main>
+
+<!-- Bloco Jinja2 que captura e exibe mensagens flash enviadas pelo back-end -->
+{% with mensagens = get_flashed_messages(with_categories=true) %}
+  {% if mensagens %}
+    <div class="mensagens">
+      {% for categoria, msg in mensagens %}
+        <!-- A categoria define a classe CSS de estilo do alerta (ex: erro, sucesso) -->
+        <div class="alerta {{ categoria }}">{{ msg }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<!-- Seção de listagem e busca de consertos -->
+<section id="consertos">
+  <!-- Cabeçalho da seção com título e botão de atalho para novo cadastro -->
+  <div class="cab">
+    <div><h1>Consertos</h1><p>Consertos cadastrados na oficina.</p></div>
+    <a class="btn destaque" href="{{ url_for('cadastrar') }}">Cadastrar conserto</a>
+  </div>
+  <!-- Formulário de busca e filtro enviado via GET (parâmetros na URL) -->
+  <form class="busca" action="{{ url_for('listar_consertos') }}" method="get">
+    <!-- Campo de pesquisa textual que mantém o termo buscado -->
+    <input type="search" name="q" value="{{ termo }}" aria-label="Buscar" placeholder="Buscar por cliente, veículo, mecânico, problema ou status">
+    <!-- Filtro por situação preenchido dinamicamente e mantendo a opção selecionada -->
+    <select name="situacao" aria-label="Filtrar por situação">
+      <option value="">Todas as situações</option>
+      {% for s in situacoes %}
+        <option value="{{ s.value }}" {% if situacao_filtro == s.value %}selected{% endif %}>{{ s.value }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit">Buscar</button>
+  </form>
+  <!-- Contêiner com rolagem horizontal para adaptar a tabela em telas menores -->
+  <div class="caixa rolagem">
+    <table>
+      <!-- Cabeçalho das colunas da tabela -->
+      <thead><tr><th>Nº</th><th>Cliente</th><th>Veículo</th><th>Problema</th><th>Mecânico</th><th>Situação</th><th></th></tr></thead>
+      <tbody>
+        <!-- Verifica se existem consertos para listar -->
+        {% if consertos %}
+          {% for c in consertos %}
+            <!-- Define dinamicamente a classe CSS do selo de acordo com o status do conserto -->
+            {% set classe_selo = 's-pendente' if c.situacao.value == 'Pendente' else ('s-exec' if c.situacao.value == 'Em execução' else 's-ok') %}
+            <tr>
+              <!-- Formata o ID com 4 dígitos preenchidos com zeros à esquerda (ex: #0001) -->
+              <td class="placa-id">#{{ "%04d"|format(c.id) }}</td>
+              <td>{{ c.cliente }}</td>
+              <td>{{ c.veiculo }}</td>
+              <td>{{ c.problema }}</td>
+              <td>{{ c.mecanico }}</td>
+              <!-- Exibe a situação atual estilizada como um selo/badge -->
+              <td><span class="selo {{ classe_selo }}">{{ c.situacao.value }}</span></td>
+              <!-- Link para visualizar os detalhes do conserto específico -->
+              <td><a href="{{ url_for('detalhe_conserto', conserto_id=c.id) }}">Abrir</a></td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <!-- Linha exibida caso a lista esteja vazia ou a busca não encontre resultados -->
+          <tr><td colspan="7">Nenhum conserto cadastrado.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+</main>
+
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!-- Define o documento como HTML5 e o idioma como português do Brasil -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<!-- Define a codificação de caracteres e a escala inicial para responsividade -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Título dinâmico da aba exibindo o número do conserto formatado com 4 dígitos -->
+<title>Conserto #{{ "%04d"|format(conserto.id) }} – Oficina</title>
+<!-- Importa a folha de estilos da pasta static usando url_for do Flask -->
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<!-- Menu de navegação principal com atributo de acessibilidade -->
+<nav aria-label="Menu principal">
+  <div class="marca"><strong>OFICINA</strong><span>Consertos e estoque</span></div>
+  <!-- Links gerados dinamicamente pelas rotas do Flask -->
+  <a href="{{ url_for('index') }}">Início</a>
+  <a href="{{ url_for('cadastrar') }}">Cadastrar conserto</a>
+  <!-- Mantém a seção "Consertos" destacada como página ativa -->
+  <a href="{{ url_for('listar_consertos') }}" class="ativo" aria-current="page">Consertos</a>
+  <a href="{{ url_for('estoque') }}">Estoque</a>
+  <a href="{{ url_for('historico') }}">Histórico do estoque</a>
+</nav>
+
+<!-- Área de conteúdo principal da página -->
+<main>
+
+<!-- Bloco Jinja2 que captura e exibe mensagens flash enviadas pelo back-end -->
+{% with mensagens = get_flashed_messages(with_categories=true) %}
+  {% if mensagens %}
+    <div class="mensagens">
+      {% for categoria, msg in mensagens %}
+        <!-- A categoria define a classe CSS de estilo do alerta (ex: erro, sucesso) -->
+        <div class="alerta {{ categoria }}">{{ msg }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<!-- Define a classe CSS do selo de status com base na situação atual do conserto -->
+{% set classe_selo = 's-pendente' if conserto.situacao.value == 'Pendente' else ('s-exec' if conserto.situacao.value == 'Em execução' else 's-ok') %}
+
+<!-- Seção de detalhes e gerenciamento de um conserto específico -->
+<section id="detalhe">
+  <!-- Cabeçalho com o número do conserto, selo de situação e botão para voltar à lista -->
+  <div class="cab">
+    <div><h1>Conserto #{{ "%04d"|format(conserto.id) }}</h1><p><span class="selo {{ classe_selo }}">{{ conserto.situacao.value }}</span></p></div>
+    <a class="btn sec" href="{{ url_for('listar_consertos') }}">Voltar para consertos</a>
+  </div>
+
+  <!-- Cartão com as informações gerais do atendimento usando lista de definição (<dl>) -->
+  <div class="caixa">
+    <h2>Dados do atendimento</h2>
+    <dl class="ficha">
+      <div><dt>Cliente</dt><dd>{{ conserto.cliente }}</dd></div>
+      <div><dt>Veículo</dt><dd>{{ conserto.veiculo }}</dd></div>
+      <div><dt>Mecânico</dt><dd>{{ conserto.mecanico }}</dd></div>
+      <!-- Formata a data e hora de entrada no padrão brasileiro -->
+      <div><dt>Entrada</dt><dd>{{ conserto.data_entrada.strftime('%d/%m/%Y %H:%M') }}</dd></div>
+      <!-- Ocupa toda a largura da grade para exibir a descrição completa do problema -->
+      <div style="grid-column:1/-1"><dt>Problema</dt><dd>{{ conserto.problema }}</dd></div>
+    </dl>
+  </div>
+
+  <!-- Cartão com a tabela de peças aplicadas no conserto e o resumo financeiro -->
+  <div class="caixa">
+    <h2>Peças utilizadas</h2>
+    <div class="rolagem"><table>
+      <thead><tr><th>Peça</th><th class="num">Qtd.</th><th class="num">Unitário</th><th class="num">Subtotal</th></tr></thead>
+      <tbody>
+        <!-- Lista as peças registradas ou exibe aviso caso nenhuma tenha sido usada -->
+        {% if conserto.pecas_usadas %}
+          {% for item in conserto.pecas_usadas %}
+            <tr>
+              <td>{{ item.nome }}</td>
+              <td class="num">{{ item.quantidade }}</td>
+              <!-- Usa a função auxiliar formatar_moeda para exibir os valores em R$ -->
+              <td class="num">{{ formatar_moeda(item.preco_unitario) }}</td>
+              <td class="num">{{ formatar_moeda(item.subtotal) }}</td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr><td colspan="4">Nenhuma peça utilizada.</td></tr>
+        {% endif %}
+      </tbody>
+    </table></div>
+    <!-- Resumo dos valores totais de peças, mão de obra e valor final -->
+    <div class="totais">
+      <span>Peças <b>{{ formatar_moeda(conserto.total_pecas) }}</b></span>
+      <span>Mão de obra <b>{{ formatar_moeda(conserto.mao_de_obra) }}</b></span>
+      <span>Total <b>{{ formatar_moeda(conserto.total) }}</b></span>
+    </div>
+  </div>
+
+  <!-- Cartão com o histórico de anotações feitas pelo mecânico -->
+  <div class="caixa">
+    <h2>Comentários do mecânico</h2>
+    {% if conserto.comentarios %}
+      {% for com in conserto.comentarios %}
+        <div class="comentario">
+          <small>{{ com.data.strftime('%d/%m/%Y %H:%M') }} · {{ com.mecanico }}</small>
+          <div>{{ com.texto }}</div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p class="dica">Nenhum comentário registrado.</p>
+    {% endif %}
+  </div>
+
+  <!-- Exibe os formulários de edição apenas enquanto o conserto não estiver concluído -->
+  {% if conserto.situacao.value != 'Concluído' %}
+    <!-- Grade com dois formulários lado a lado: adicionar peça e adicionar comentário -->
+    <div class="duas">
+      <!-- Formulário para dar baixa e vincular uma peça do estoque ao conserto -->
+      <form class="caixa" action="{{ url_for('detalhe_conserto', conserto_id=conserto.id) }}" method="post">
+        <!-- Campo oculto que identifica a ação no back-end -->
+        <input type="hidden" name="acao" value="usar_peca">
+        <h2>Peça utilizada</h2>
+        <label>Nome da peça
+          <select name="peca" required>
+            <option value="">Escolha uma peça</option>
+            <!-- Lista as peças disponíveis no estoque mostrando quantidade e preço -->
+            {% for p in estoque %}
+              <option value="{{ p.id }}">{{ p.nome }} ({{ p.quantidade }} disp. – {{ formatar_moeda(p.preco_venda) }})</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>Quantidade utilizada <input type="number" name="quantidade" min="1" required></label>
+        <div class="botoes"><button type="submit">Registrar peça</button></div>
+      </form>
+
+      <!-- Formulário para registrar um novo comentário técnico -->
+      <form class="caixa" action="{{ url_for('detalhe_conserto', conserto_id=conserto.id) }}" method="post">
+        <input type="hidden" name="acao" value="comentar">
+        <h2>Comentário do mecânico</h2>
+        <label>Comentário <textarea name="comentario" required></textarea></label>
+        <div class="botoes"><button type="submit">Salvar comentário</button></div>
+      </form>
+    </div>
+
+    <!-- Formulário para atualizar o status do conserto ou encerrá-lo informando a mão de obra -->
+    <form class="caixa" action="{{ url_for('detalhe_conserto', conserto_id=conserto.id) }}" method="post" style="margin-top:1rem">
+      <h2>O que deseja fazer com este conserto?</h2>
+      <label style="max-width:260px">Valor da mão de obra (R$) <input name="mao_de_obra" inputmode="decimal"></label>
+      <span class="dica">A mão de obra é pedida somente ao concluir. Conserto concluído não aceita novas peças nem comentários.</span>
+      <!-- Cada botão envia um valor diferente para o parâmetro 'acao' -->
+      <div class="botoes">
+        <button class="sec" type="submit" name="acao" value="manter">Deixar em execução</button>
+        <button class="destaque" type="submit" name="acao" value="concluir">Concluir conserto</button>
+      </div>
+    </form>
+  {% endif %}
+</section>
+
+</main>
+
+</body>
+</html>
