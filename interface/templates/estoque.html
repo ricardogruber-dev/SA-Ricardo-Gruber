@@ -78,9 +78,10 @@
       <label>Nome da peça <input name="nome" required></label>
       <!-- Campo numérico exigindo quantidade mínima de 1 unidade -->
       <label>Quantidade <input type="number" name="quantidade" min="1" required></label>
-      <!-- Campos de valores monetários com inputmode="decimal" para facilitar digitação no celular -->
-      <label>Preço de custo unitário (R$) <input name="custo" inputmode="decimal" required></label>
-      <label>Preço de venda unitário (R$) <input name="venda" inputmode="decimal" required></label>
+      <!-- Campos de valores monetários: o eita só números (copattern acm vírgula ou ponto opcional)
+           e o title é a mensagem exibida pelo navegador quando o valor tem letras ou símbolos -->
+      <label>Preço de custo unitário (R$) <input name="custo" inputmode="decimal" pattern="[0-9]+([.,][0-9]+)?" title="Digite apenas números, por exemplo: 25,90" required></label>
+      <label>Preço de venda unitário (R$) <input name="venda" inputmode="decimal" pattern="[0-9]+([.,][0-9]+)?" title="Digite apenas números, por exemplo: 25,90" required></label>
     </div>
     <!-- Botão de envio do formulário -->
     <div class="botoes"><button class="destaque" type="submit">Adicionar ao estoque</button></div>

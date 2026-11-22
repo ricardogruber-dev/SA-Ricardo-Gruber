@@ -98,7 +98,8 @@
   <div class="caixa">
     <h2>Comentários do mecânico</h2>
     {% if conserto.comentarios %}
-      {% for com in conserto.comentarios %}
+      <!-- O filtro reverse inverte a lista: os comentários mais recentes aparecem primeiro -->
+      {% for com in conserto.comentarios|reverse %}
         <div class="comentario">
           <small>{{ com.data.strftime('%d/%m/%Y %H:%M') }} · {{ com.mecanico }}</small>
           <div>{{ com.texto }}</div>
