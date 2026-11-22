@@ -64,7 +64,16 @@ button:hover,.btn:hover{background:var(--chassi-2)}
 .destaque{background:var(--placa);border-color:var(--placa);color:var(--placa-tinta)}
 .destaque:hover{background:#d9a406}
 .dica{color:var(--suave);font-size:.85rem;font-weight:400}
-#outro-campo[hidden]{display:none}
+
+/* Campo "Outro problema" (CSS puro, sem JavaScript):
+   fica oculto e só aparece quando a opção 'outro' está selecionada */
+#outro-campo{display:none}
+form:has(#problema option[value="outro"]:checked) #outro-campo{display:block}
+/* Navegadores antigos sem suporte a :has() mostram o campo sempre */
+@supports not selector(:has(*)){#outro-campo{display:block}}
+/* Aviso exibido só depois de uma tentativa de cadastro com a descrição vazia */
+.aviso-campo{color:var(--erro);font-size:.9em;margin-top:4px;display:block}
+.campo-erro{border-color:var(--erro)}
 
 /* Tabelas */
 .rolagem{overflow-x:auto}

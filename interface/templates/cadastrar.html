@@ -61,10 +61,16 @@
         </select>
       </label>
     </div>
-    <!-- Campo oculto por padrão; aparece apenas se a opção 'outro' estiver selecionada -->
-    <label id="outro-campo" {% if not (form_dados and form_dados.problema == 'outro') %}hidden{% endif %}>
+    <!-- Campo oculto por CSS; aparece apenas se a opção 'outro' estiver selecionada.
+         O aviso só é exibido depois de uma tentativa de cadastro com a descrição vazia
+         (o back-end devolve form_dados nesse caso). -->
+    {% set falta_descricao = form_dados and form_dados.problema == 'outro' and not form_dados.problema_outro.strip() %}
+    <label id="outro-campo">
       Descreva o problema apresentado
-      <textarea name="problema_outro">{{ form_dados.problema_outro if form_dados else '' }}</textarea>
+     <textarea name="problema_outro" id="problema_outro" {% if falta_descricao %}class="campo-erro"{% endif %}>{{ form_dados.problema_outro if form_dados else '' }}</textarea>
+      {% if falta_descricao %}
+        <span cl ass="aviso-campo">Descreva o problema para poder cadastrar o conserto.</span>
+      {% endif %}
     </label>
     <!-- Botões de submissão e cancelamento -->
     <div class="botoes">
@@ -73,3 +79,8 @@
     </div>
   </form>
 </section>
+
+</main>
+
+</body>
+</html>
