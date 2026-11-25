@@ -40,14 +40,36 @@
 {% endwith %}
 
 <!-- Define a classe CSS do selo de status com base na situação atual do conserto -->
-{% set classe_selo = 's-pendente' if conserto.situacao.value == 'Pendente' else ('s-exec' if conserto.situacao.value == 'Em execução' else 's-ok') %}
+{% if conserto.situacao.value == 'Pendente' %}
+  {% set classe_selo = 's-pendente' %}
+{% elif conserto.situacao.value == 'Em execução' %}
+  {% set classe_selo = 's-exec' %}
+{% elif conserto.situacao.value == 'Cancelado' %}
+  {% set classe_selo = 's-cancelado' %}
+{% else %}
+  {% set classe_selo = 's-ok' %}
+{% endif %}
+
+{% set conserto_ativo = conserto.situacao.value in ['Pendente', 'Em execução'] %}
 
 <!-- Seção de detalhes e gerenciamento de um conserto específico -->
 <section id="detalhe">
-  <!-- Cabeçalho com o número do conserto, selo de situação e botão para voltar à lista -->
+  <!-- Cabeçalho com o número do conserto, selo de situação e botões de ação -->
   <div class="cab">
-    <div><h1>Conserto #{{ "%04d"|format(conserto.id) }}</h1><p><span class="selo {{ classe_selo }}">{{ conserto.situacao.value }}</span></p></div>
-    <a class="btn sec" href="{{ url_for('listar_consertos') }}">Voltar para consertos</a>
+    <div>
+      <h1>Conserto #{{ "%04d"|format(conserto.id) }}</h1>
+      <p><span class="selo {{ classe_selo }}">{{ conserto.situacao.value }}</span></p>
+    </div>
+    <div class="botoes">
+      {% if conserto_ativo %}
+        <a class="btn" href="{{ url_for('editar_conserto', conserto_id=conserto.id) }}">Editar conserto</a>
+        <form action="{{ url_for('detalhe_conserto', conserto_id=conserto.id) }}" method="post" style="display:inline" onsubmit="return confirm('Tem certeza que deseja cancelar este conserto?{% if conserto.pecas_usadas %} As peças utilizadas serão devolvidas automaticamente ao estoque.{% endif %}');">
+          <input type="hidden" name="acao" value="cancelar">
+          <button type="submit" class="perigo">Cancelar conserto</button>
+        </form>
+      {% endif %}
+      <a class="btn sec" href="{{ url_for('listar_consertos') }}">Voltar para consertos</a>
+    </div>
   </div>
 
   <!-- Cartão com as informações gerais do atendimento usando lista de definição (<dl>) -->
@@ -110,8 +132,8 @@
     {% endif %}
   </div>
 
-  <!-- Exibe os formulários de edição apenas enquanto o conserto não estiver concluído -->
-  {% if conserto.situacao.value != 'Concluído' %}
+  <!-- Exibe os formulários de edição apenas enquanto o conserto estiver ativo -->
+  {% if conserto_ativo %}
     <!-- Grade com dois formulários lado a lado: adicionar peça e adicionar comentário -->
     <div class="duas">
       <!-- Formulário para dar baixa e vincular uma peça do estoque ao conserto -->
@@ -144,8 +166,8 @@
     <!-- Formulário para atualizar o status do conserto ou encerrá-lo informando a mão de obra -->
     <form class="caixa" action="{{ url_for('detalhe_conserto', conserto_id=conserto.id) }}" method="post" style="margin-top:1rem">
       <h2>O que deseja fazer com este conserto?</h2>
-      <label style="max-width:260px">Valor da mão de obra (R$) <input name="mao_de_obra" inputmode="decimal" required title="Digite o valor da mão de obra para concluir o conserto"><span class="aviso-mao-obra">Você precisa digitar o valor da mão de obra para concluir este conserto.</span></label>
-      <span class="dica">A mão de obra é pedida somente ao concluir. Conserto concluído não aceita novas peças nem comentários.</span>
+      <label style="max-width:260px">Valor da mão de obra (R$) <input name="mao_de_obra" inputmode="decimal" value="{{ '%.2f'|format(conserto.mao_de_obra)|replace('.', ',') if conserto.mao_de_obra > 0 else '' }}" required title="Digite o valor da mão de obra para concluir o conserto"><span class="aviso-mao-obra">Você precisa digitar o valor da mão de obra para concluir este conserto.</span></label>
+      <span class="dica">A mão de obra é pedida somente ao concluir. Conserto concluído ou cancelado não aceita novas peças nem comentários.</span>
       <!-- Cada botão envia um valor diferente para o parâmetro 'acao'. O "formnovalidate" deixa o botão de manter ignorar o campo obrigatório -->
       <div class="botoes">
         <button class="sec" type="submit" name="acao" value="manter" formnovalidate>Deixar em execução</button>

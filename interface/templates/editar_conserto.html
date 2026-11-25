@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Editar Conserto #{{ "%04d"|format(conserto.id) }} – Oficina</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<nav aria-label="Menu principal">
+  <div class="marca"><strong>OFICINA</strong><span>Consertos e estoque</span></div>
+  <a href="{{ url_for('index') }}">Início</a>
+  <a href="{{ url_for('cadastrar') }}">Cadastrar conserto</a>
+  <a href="{{ url_for('listar_consertos') }}" class="ativo" aria-current="page">Consertos</a>
+  <a href="{{ url_for('estoque') }}">Estoque</a>
+  <a href="{{ url_for('historico') }}">Histórico do estoque</a>
+</nav>
+
+<main>
+
+{% with mensagens = get_flashed_messages(with_categories=true) %}
+  {% if mensagens %}
+    <div class="mensagens">
+      {% for categoria, msg in mensagens %}
+        <div class="alerta {{ categoria }}">{{ msg }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<section id="editar-conserto">
+  <div class="cab">
+    <div>
+      <h1>Editar Conserto #{{ "%04d"|format(conserto.id) }}</h1>
+      <p>Altere os dados cadastrais ou o valor da mão de obra. As peças já utilizadas não serão modificadas.</p>
+    </div>
+    <a class="btn sec" href="{{ url_for('detalhe_conserto', conserto_id=conserto.id) }}">Voltar aos detalhes</a>
+  </div>
+
+  <form class="caixa" action="{{ url_for('editar_conserto', conserto_id=conserto.id) }}" method="post">
+    <div class="campos">
+      <label>
+        Nome do cliente
+        <input name="cliente" value="{{ form_dados.cliente }}" required>
+      </label>
+      <label>
+        Nome do veículo
+        <input name="veiculo" value="{{ form_dados.veiculo }}" required>
+      </label>
+      <label>
+        Nome do mecânico
+        <input name="mecanico" value="{{ form_dados.mecanico }}" required>
+      </label>
+      <label>
+        Valor da mão de obra (R$)
+        <input name="mao_de_obra" inputmode="decimal" pattern="[0-9]+([.,][0-9]+)?" title="Digite um valor numérico não negativo, por exemplo: 120,00" value="{{ form_dados.mao_de_obra }}" required>
+      </label>
+    </div>
+
+    <label>
+      Descrição do problema
+      <textarea name="problema" required>{{ form_dados.problema }}</textarea>
+    </label>
+
+    <div class="botoes">
+      <button class="destaque" type="submit">Salvar alterações</button>
+      <a class="btn sec" href="{{ url_for('detalhe_conserto', conserto_id=conserto.id) }}">Cancelar</a>
+    </div>
+  </form>
+</section>
+
+</main>
+
+</body>
+</html>

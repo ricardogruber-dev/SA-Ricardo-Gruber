@@ -39,7 +39,7 @@
   {% endif %}
 {% endwith %}
 
-<!-- Seção de exibição do registro de entradas e saídas do estoque -->
+<!-- Seção de exibição do registro de entradas, saídas, edições e exclusões do estoque -->
 <section id="historico">
   <!-- Cabeçalho da seção com título e descrição da ordenação -->
   <div class="cab"><div><h1>Histórico do estoque</h1><p>Da movimentação mais recente para a mais antiga.</p></div></div>
@@ -47,14 +47,28 @@
     <!-- Verifica se há movimentações registradas para exibir -->
     {% if movimentacoes %}
       {% for m in movimentacoes %}
-        <!-- Define a classe CSS ('entrada' ou 'saida') ignorando maiúsculas/minúsculas com casefold() -->
-        {% set classe_mov = 'entrada' if m.tipo.casefold() == 'entrada' else 'saida' %}
-        <!-- Linha com os detalhes da movimentação: data/hora, tipo, peça/quantidade e motivo -->
+        {% set tipo_norm = m.tipo.casefold() %}
+        {% if tipo_norm == 'entrada' %}
+          {% set classe_mov = 'entrada' %}
+        {% elif tipo_norm == 'edição' %}
+          {% set classe_mov = 'edicao' %}
+        {% else %}
+          {% set classe_mov = 'saida' %}
+        {% endif %}
+        <!-- Linha com os detalhes da movimentação: data/hora, tipo, peça/quantidade, motivo e conserto -->
         <div class="linha-mov">
           <time>{{ m.data.strftime('%d/%m/%Y %H:%M') }}</time>
           <span class="{{ classe_mov }}">{{ m.tipo }}</span>
-          <span>{{ m.nome_peca }} · {{ m.quantidade }} un.</span>
+          <span>
+            <strong>{{ m.nome_peca }}</strong>
+            {% if m.quantidade > 0 or tipo_norm in ['entrada', 'saída'] %}
+              · {{ m.quantidade }} un.
+            {% endif %}
+          </span>
           <span>{{ m.motivo }}</span>
+          {% if m.conserto_id %}
+            <a class="dica" href="{{ url_for('detalhe_conserto', conserto_id=m.conserto_id) }}">(Ver conserto #{{ "%04d"|format(m.conserto_id) }})</a>
+          {% endif %}
         </div>
       {% endfor %}
     {% else %}

@@ -49,37 +49,145 @@
   <div class="caixa rolagem">
     <table>
       <!-- Cabeçalho das colunas da tabela (valores numéricos alinhados via classe 'num') -->
-      <thead><tr><th>ID</th><th>Peça</th><th class="num">Qtd.</th><th class="num">Custo</th><th class="num">Venda</th></tr></thead>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Peça</th>
+          <th class="num">Qtd.</th>
+          <th class="num">Custo</th>
+          <th class="num">Venda</th>
+          <th style="text-align:right">Ações</th>
+        </tr>
+      </thead>
       <tbody>
         <!-- Verifica se existem peças cadastradas no estoque -->
         {% if pecas %}
           {% for p in pecas %}
-            <tr>
+            {% set tem_erro_linha = edicao_erro and edicao_erro.peca_id == p.id %}
+            {% set val_nome = edicao_erro.nome if tem_erro_linha else p.nome %}
+            {% set val_qtd = edicao_erro.quantidade if tem_erro_linha else p.quantidade %}
+            {% set val_custo = edicao_erro.custo if tem_erro_linha else formatar_decimal_input(p.preco_custo) %}
+            {% set val_venda = edicao_erro.venda if tem_erro_linha else formatar_decimal_input(p.preco_venda) %}
+            {% set erros_linha = edicao_erro.erros if tem_erro_linha else {} %}
+
+            <!-- Linha de visualização padrão -->
+            <tr id="peca-view-{{ p.id }}" class="{% if tem_erro_linha %}oculto{% endif %}">
               <td>{{ p.id }}</td>
               <td>{{ p.nome }}</td>
               <td class="num">{{ p.quantidade }}</td>
-              <!-- Formata os preços de custo e venda usando a função auxiliar formatar_moeda -->
               <td class="num">{{ formatar_moeda(p.preco_custo) }}</td>
               <td class="num">{{ formatar_moeda(p.preco_venda) }}</td>
+              <td style="text-align:right;white-space:nowrap">
+                <div class="botoes" style="justify-content:flex-end">
+                  <button type="button" class="sec btn-sm" data-id="{{ p.id }}" onclick="iniciarEdicaoPeca(this.dataset.id)">Editar</button>
+                  <form action="{{ url_for('estoque') }}" method="post" style="display:inline" data-nome="{{ p.nome }}" onsubmit="return confirm('Tem certeza que deseja excluir a peça \'' + this.dataset.nome + '\' do estoque?');">
+                    <input type="hidden" name="acao" value="excluir_peca">
+                    <input type="hidden" name="peca_id" value="{{ p.id }}">
+                    <button type="submit" class="perigo btn-sm">Excluir</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Linha de edição inline -->
+            <tr id="peca-edit-{{ p.id }}" class="{% if not tem_erro_linha %}oculto{% endif %}">
+              <td>
+                {{ p.id }}
+                <form id="form-edit-{{ p.id }}" action="{{ url_for('estoque') }}" method="post">
+                  <input type="hidden" name="acao" value="editar_peca">
+                  <input type="hidden" name="peca_id" value="{{ p.id }}">
+                </form>
+              </td>
+              <td>
+                <input
+                  class="input-inline {% if erros_linha.nome %}campo-erro{% endif %}"
+                  name="nome"
+                  form="form-edit-{{ p.id }}"
+                  value="{{ val_nome }}"
+                  data-original="{{ p.nome }}"
+                  aria-label="Nome da peça"
+                  required
+                >
+                {% if erros_linha.nome %}
+                  <span class="aviso-campo">{{ erros_linha.nome }}</span>
+                {% endif %}
+              </td>
+              <td class="num">
+                <input
+                  class="input-inline input-num {% if erros_linha.quantidade %}campo-erro{% endif %}"
+                  type="number"
+                  min="0"
+                  step="1"
+                  name="quantidade"
+                  form="form-edit-{{ p.id }}"
+                  value="{{ val_qtd }}"
+                  data-original="{{ p.quantidade }}"
+                  aria-label="Quantidade em estoque"
+                  required
+                >
+                {% if erros_linha.quantidade %}
+                  <span class="aviso-campo">{{ erros_linha.quantidade }}</span>
+                {% endif %}
+              </td>
+              <td class="num">
+                <input
+                  class="input-inline input-num {% if erros_linha.custo %}campo-erro{% endif %}"
+                  name="custo"
+                  inputmode="decimal"
+                  pattern="[0-9]+([.,][0-9]+)?"
+                  title="Digite apenas números, por exemplo: 25,90"
+                  form="form-edit-{{ p.id }}"
+                  value="{{ val_custo }}"
+                  data-original="{{ formatar_decimal_input(p.preco_custo) }}"
+                  aria-label="Preço de custo"
+                  required
+                >
+                {% if erros_linha.custo %}
+                  <span class="aviso-campo">{{ erros_linha.custo }}</span>
+                {% endif %}
+              </td>
+              <td class="num">
+                <input
+                  class="input-inline input-num {% if erros_linha.venda %}campo-erro{% endif %}"
+                  name="venda"
+                  inputmode="decimal"
+                  pattern="[0-9]+([.,][0-9]+)?"
+                  title="Digite apenas números, por exemplo: 25,90"
+                  form="form-edit-{{ p.id }}"
+                  value="{{ val_venda }}"
+                  data-original="{{ formatar_decimal_input(p.preco_venda) }}"
+                  aria-label="Preço de venda"
+                  required
+                >
+                {% if erros_linha.venda %}
+                  <span class="aviso-campo">{{ erros_linha.venda }}</span>
+                {% endif %}
+              </td>
+              <td style="text-align:right;white-space:nowrap">
+                <div class="botoes" style="justify-content:flex-end">
+                  <button type="submit" form="form-edit-{{ p.id }}" class="destaque btn-sm">Salvar</button>
+                  <button type="button" class="sec btn-sm" data-id="{{ p.id }}" onclick="cancelarEdicaoPeca(this.dataset.id)">Cancelar</button>
+                </div>
+              </td>
             </tr>
           {% endfor %}
         {% else %}
           <!-- Linha exibida caso nenhuma peça esteja cadastrada -->
-          <tr><td colspan="5">Estoque vazio.</td></tr>
+          <tr><td colspan="6">Estoque vazio.</td></tr>
         {% endif %}
       </tbody>
     </table>
   </div>
   <!-- Formulário enviado via POST para cadastrar uma nova peça ou somar unidades a uma existente -->
   <form class="caixa" action="{{ url_for('estoque') }}" method="post">
+    <input type="hidden" name="acao" value="adicionar">
     <h2>Adicionar peça ao estoque</h2>
     <p class="dica" style="margin:0">Se a peça já existir, as unidades são somadas.</p>
     <div class="campos">
       <label>Nome da peça <input name="nome" required></label>
       <!-- Campo numérico exigindo quantidade mínima de 1 unidade -->
       <label>Quantidade <input type="number" name="quantidade" min="1" required></label>
-      <!-- Campos de valores monetários: o eita só números (copattern acm vírgula ou ponto opcional)
-           e o title é a mensagem exibida pelo navegador quando o valor tem letras ou símbolos -->
+      <!-- Campos de valores monetários -->
       <label>Preço de custo unitário (R$) <input name="custo" inputmode="decimal" pattern="[0-9]+([.,][0-9]+)?" title="Digite apenas números, por exemplo: 25,90" required></label>
       <label>Preço de venda unitário (R$) <input name="venda" inputmode="decimal" pattern="[0-9]+([.,][0-9]+)?" title="Digite apenas números, por exemplo: 25,90" required></label>
     </div>
@@ -89,6 +197,33 @@
 </section>
 
 </main>
+
+<script>
+function iniciarEdicaoPeca(id) {
+  document.getElementById("peca-view-" + id).classList.add("oculto");
+  const editRow = document.getElementById("peca-edit-" + id);
+  editRow.classList.remove("oculto");
+  const primeiroInput = editRow.querySelector('input[name="nome"]');
+  if (primeiroInput) {
+    primeiroInput.focus();
+  }
+}
+
+function cancelarEdicaoPeca(id) {
+  const editRow = document.getElementById("peca-edit-" + id);
+  const inputs = editRow.querySelectorAll("input[data-original]");
+  inputs.forEach(function(input) {
+    input.value = input.getAttribute("data-original");
+    input.classList.remove("campo-erro");
+  });
+  const avisos = editRow.querySelectorAll(".aviso-campo");
+  avisos.forEach(function(aviso) {
+    aviso.remove();
+  });
+  editRow.classList.add("oculto");
+  document.getElementById("peca-view-" + id).classList.remove("oculto");
+}
+</script>
 
 </body>
 </html>

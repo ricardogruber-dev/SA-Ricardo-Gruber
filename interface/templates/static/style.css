@@ -3,14 +3,14 @@
   --chassi:#1f3a4d; --chassi-2:#2c5069; --placa:#f2b705; --placa-tinta:#2b2100;
   --pendente:#8a5a00; --pendente-bg:#fff1cc;
   --exec:#0b4f8a; --exec-bg:#dcebfa;
-  --ok:#1b6b3a; --ok-bg:#dcf2e4; --erro:#a32121;
+  --ok:#1b6b3a; --ok-bg:#dcf2e4; --erro:#a32121; --erro-bg:#fde8e8;
   --fonte:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
   --titulo:Bahnschrift,"Arial Narrow","Segoe UI",system-ui,sans-serif;
 }
 @media (prefers-color-scheme:dark){
   :root{--fundo:#12181e;--papel:#1a232c;--tinta:#e6ebf0;--suave:#9aa8b6;--linha:#2e3b48;
     --chassi:#0f1c26;--chassi-2:#223a4c;--pendente:#ffd77a;--pendente-bg:#3d2f08;
-    --exec:#9cc9f5;--exec-bg:#12304d;--ok:#8fdcaa;--ok-bg:#12341f;--erro:#ff9a9a}
+    --exec:#9cc9f5;--exec-bg:#12304d;--ok:#8fdcaa;--ok-bg:#12341f;--erro:#ff9a9a;--erro-bg:#3d1414}
 }
 *{box-sizing:border-box}
 body{margin:0;font:16px/1.5 var(--fonte);background:var(--fundo);color:var(--tinta);display:flex;min-height:100vh}
@@ -19,6 +19,12 @@ h1{font-size:1.9rem;font-weight:700;letter-spacing:.01em}
 h2{font-size:1.15rem;font-weight:700}
 a{color:inherit}
 :focus-visible{outline:3px solid var(--placa);outline-offset:2px}
+
+/* Mensagens flash */
+.mensagens{display:grid;gap:.5rem;margin-bottom:1rem}
+.alerta{padding:.75rem 1rem;border-radius:6px;border:1px solid var(--linha);font-weight:600}
+.alerta.sucesso{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.alerta.erro{background:var(--erro-bg);color:var(--erro);border-color:var(--erro)}
 
 /* Menu lateral */
 nav{width:240px;flex:none;background:var(--chassi);color:#e8eef3;padding:1.25rem 0;position:sticky;top:0;height:100vh;display:flex;flex-direction:column}
@@ -56,14 +62,22 @@ form{display:grid;gap:1rem}
 label{display:grid;gap:.3rem;font-weight:600;font-size:.92rem}
 input,select,textarea{font:inherit;color:inherit;background:var(--fundo);border:1px solid var(--linha);border-radius:4px;padding:.55rem .65rem;width:100%}
 textarea{min-height:5rem;resize:vertical}
-.botoes{display:flex;gap:.6rem;flex-wrap:wrap}
+.botoes{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
 button,.btn{font:600 .95rem var(--fonte);border:1px solid var(--chassi);background:var(--chassi);color:#fff;border-radius:4px;padding:.55rem 1rem;cursor:pointer;text-decoration:none;display:inline-block}
 button:hover,.btn:hover{background:var(--chassi-2)}
 .sec{background:transparent;color:var(--tinta);border-color:var(--linha)}
 .sec:hover{background:var(--fundo)}
 .destaque{background:var(--placa);border-color:var(--placa);color:var(--placa-tinta)}
 .destaque:hover{background:#d9a406}
+.perigo{background:var(--erro);border-color:var(--erro);color:#fff}
+.perigo:hover{opacity:.9}
+.btn-sm{padding:.3rem .65rem;font-size:.85rem}
 .dica{color:var(--suave);font-size:.85rem;font-weight:400}
+
+/* Edição inline na tabela */
+.input-inline{padding:.35rem .5rem;font-size:.92rem;min-width:110px}
+.input-num{text-align:right;max-width:110px;font-variant-numeric:tabular-nums}
+.oculto{display:none!important}
 
 /* Campo "Outro problema" (CSS puro, sem JavaScript):
    fica oculto e só aparece quando a opção 'outro' está selecionada */
@@ -72,8 +86,8 @@ form:has(#problema option[value="outro"]:checked) #outro-campo{display:block}
 /* Navegadores antigos sem suporte a :has() mostram o campo sempre */
 @supports not selector(:has(*)){#outro-campo{display:block}}
 /* Aviso exibido só depois de uma tentativa de cadastro com a descrição vazia */
-.aviso-campo{color:var(--erro);font-size:.9em;margin-top:4px;display:block}
-.campo-erro{border-color:var(--erro)}
+.aviso-campo{color:var(--erro);font-size:.82rem;margin-top:3px;display:block;font-weight:400;text-align:left}
+.campo-erro{border-color:var(--erro)!important}
 /* Aviso da mão de obra no detalhe do conserto
    fica oculto e só aparece depois de tentar concluir com o campo vazio */
 .aviso-mao-obra{display:none;color:var(--erro);font-size:.9em;font-weight:400;margin-top:4px}
@@ -90,6 +104,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 .s-pendente{background:var(--pendente-bg);color:var(--pendente)}
 .s-exec{background:var(--exec-bg);color:var(--exec)}
 .s-ok{background:var(--ok-bg);color:var(--ok)}
+.s-cancelado{background:var(--erro-bg);color:var(--erro)}
 .busca{display:grid;grid-template-columns:1fr 200px auto;gap:.6rem;margin-bottom:1rem}
 .placa-id{font-family:var(--titulo);font-weight:700}
 
@@ -103,9 +118,9 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 .totais b{font:700 1.3rem var(--titulo)}
 .duas{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1rem;margin-top:1rem}
 .duas .caixa+.caixa{margin-top:0}
-.linha-mov{display:flex;gap:1rem;padding:.6rem 0;border-bottom:1px solid var(--linha);flex-wrap:wrap}
+.linha-mov{display:flex;gap:1rem;padding:.6rem 0;border-bottom:1px solid var(--linha);flex-wrap:wrap;align-items:baseline}
 .linha-mov time{color:var(--suave);min-width:9.5rem}
-.entrada{color:var(--ok);font-weight:700}.saida{color:var(--erro);font-weight:700}
+.entrada{color:var(--ok);font-weight:700}.saida{color:var(--erro);font-weight:700}.edicao{color:var(--exec);font-weight:700}
 
 @media (max-width:800px){
   body{flex-direction:column}
