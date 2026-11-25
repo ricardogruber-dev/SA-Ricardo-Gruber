@@ -1,54 +1,41 @@
-<!-- Define o documento como HTML5 e o idioma como português do Brasil -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<!-- Define a codificação de caracteres e a escala inicial para responsividade -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<!-- Título da aba do navegador -->
 <title>Estoque – Oficina</title>
-<!-- Importa a folha de estilos da pasta static usando url_for do Flask -->
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<script src="{{ url_for('static', filename='estoque.js') }}" defer></script>
 </head>
 <body>
 
-<!-- Menu de navegação principal com atributo de acessibilidade -->
 <nav aria-label="Menu principal">
   <div class="marca"><strong>OFICINA</strong><span>Consertos e estoque</span></div>
-  <!-- Links gerados dinamicamente pelas rotas do Flask -->
   <a href="{{ url_for('index') }}">Início</a>
   <a href="{{ url_for('cadastrar') }}">Cadastrar conserto</a>
   <a href="{{ url_for('listar_consertos') }}">Consertos</a>
-  <!-- Link da página atual destacado com classe CSS e aria-current -->
   <a href="{{ url_for('estoque') }}" class="ativo" aria-current="page">Estoque</a>
   <a href="{{ url_for('historico') }}">Histórico do estoque</a>
 </nav>
 
-<!-- Área de conteúdo principal da página -->
 <main>
 
-<!-- Bloco Jinja2 que captura e exibe mensagens flash enviadas pelo back-end -->
 {% with mensagens = get_flashed_messages(with_categories=true) %}
   {% if mensagens %}
     <div class="mensagens">
       {% for categoria, msg in mensagens %}
-        <!-- A categoria define a classe CSS de estilo do alerta (ex: erro, sucesso) -->
         <div class="alerta {{ categoria }}">{{ msg }}</div>
       {% endfor %}
     </div>
   {% endif %}
 {% endwith %}
 
-<!-- Seção de visualização e cadastro de peças no estoque -->
 <section id="estoque">
-  <!-- Cabeçalho da seção com título e o valor total acumulado em custo do estoque -->
   <div class="cab">
     <div><h1>Estoque</h1><p>Peças cadastradas e suas quantidades e preços. Total em custo: {{ valor_estoque }}</p></div>
   </div>
-  <!-- Contêiner com rolagem horizontal para adaptar a tabela em telas menores -->
   <div class="caixa rolagem">
     <table>
-      <!-- Cabeçalho das colunas da tabela (valores numéricos alinhados via classe 'num') -->
       <thead>
         <tr>
           <th>ID</th>
@@ -60,7 +47,6 @@
         </tr>
       </thead>
       <tbody>
-        <!-- Verifica se existem peças cadastradas no estoque -->
         {% if pecas %}
           {% for p in pecas %}
             {% set tem_erro_linha = edicao_erro and edicao_erro.peca_id == p.id %}
@@ -70,8 +56,8 @@
             {% set val_venda = edicao_erro.venda if tem_erro_linha else formatar_decimal_input(p.preco_venda) %}
             {% set erros_linha = edicao_erro.erros if tem_erro_linha else {} %}
 
-            <!-- Linha de visualização padrão -->
-            <tr id="peca-view-{{ p.id }}" class="{% if tem_erro_linha %}oculto{% endif %}">
+            <!-- Linha de visualização -->
+            <tr id="peca-view-{{ p.id }}" {% if tem_erro_linha %}style="display:none"{% endif %}>
               <td>{{ p.id }}</td>
               <td>{{ p.nome }}</td>
               <td class="num">{{ p.quantidade }}</td>
@@ -79,8 +65,8 @@
               <td class="num">{{ formatar_moeda(p.preco_venda) }}</td>
               <td style="text-align:right;white-space:nowrap">
                 <div class="botoes" style="justify-content:flex-end">
-                  <button type="button" class="sec btn-sm" data-id="{{ p.id }}" onclick="iniciarEdicaoPeca(this.dataset.id)">Editar</button>
-                  <form action="{{ url_for('estoque') }}" method="post" style="display:inline" data-nome="{{ p.nome }}" onsubmit="return confirm('Tem certeza que deseja excluir a peça \'' + this.dataset.nome + '\' do estoque?');">
+                  <button type="button" class="sec btn-sm" data-acao="editar" data-id="{{ p.id }}">Editar</button>
+                  <form action="{{ url_for('estoque') }}" method="post" style="display:inline" data-confirm-exclusao="{{ p.nome }}">
                     <input type="hidden" name="acao" value="excluir_peca">
                     <input type="hidden" name="peca_id" value="{{ p.id }}">
                     <button type="submit" class="perigo btn-sm">Excluir</button>
@@ -90,14 +76,8 @@
             </tr>
 
             <!-- Linha de edição inline -->
-            <tr id="peca-edit-{{ p.id }}" class="{% if not tem_erro_linha %}oculto{% endif %}">
-              <td>
-                {{ p.id }}
-                <form id="form-edit-{{ p.id }}" action="{{ url_for('estoque') }}" method="post">
-                  <input type="hidden" name="acao" value="editar_peca">
-                  <input type="hidden" name="peca_id" value="{{ p.id }}">
-                </form>
-              </td>
+            <tr id="peca-edit-{{ p.id }}" class="linha-editando" data-peca-id="{{ p.id }}" {% if not tem_erro_linha %}style="display:none"{% endif %}>
+              <td>{{ p.id }}</td>
               <td>
                 <input
                   class="input-inline {% if erros_linha.nome %}campo-erro{% endif %}"
@@ -166,64 +146,41 @@
               <td style="text-align:right;white-space:nowrap">
                 <div class="botoes" style="justify-content:flex-end">
                   <button type="submit" form="form-edit-{{ p.id }}" class="destaque btn-sm">Salvar</button>
-                  <button type="button" class="sec btn-sm" data-id="{{ p.id }}" onclick="cancelarEdicaoPeca(this.dataset.id)">Cancelar</button>
+                  <button type="button" class="sec btn-sm" data-acao="cancelar" data-id="{{ p.id }}">Cancelar</button>
                 </div>
               </td>
             </tr>
           {% endfor %}
         {% else %}
-          <!-- Linha exibida caso nenhuma peça esteja cadastrada -->
           <tr><td colspan="6">Estoque vazio.</td></tr>
         {% endif %}
       </tbody>
     </table>
+
+    <!-- Formulários de edição fora do <table> para manter o HTML 100% válido -->
+    {% for p in pecas %}
+      <form id="form-edit-{{ p.id }}" action="{{ url_for('estoque') }}" method="post">
+        <input type="hidden" name="acao" value="editar_peca">
+        <input type="hidden" name="peca_id" value="{{ p.id }}">
+      </form>
+    {% endfor %}
   </div>
-  <!-- Formulário enviado via POST para cadastrar uma nova peça ou somar unidades a uma existente -->
+
   <form class="caixa" action="{{ url_for('estoque') }}" method="post">
     <input type="hidden" name="acao" value="adicionar">
     <h2>Adicionar peça ao estoque</h2>
     <p class="dica" style="margin:0">Se a peça já existir, as unidades são somadas.</p>
     <div class="campos">
       <label>Nome da peça <input name="nome" required></label>
-      <!-- Campo numérico exigindo quantidade mínima de 1 unidade -->
       <label>Quantidade <input type="number" name="quantidade" min="1" required></label>
-      <!-- Campos de valores monetários -->
       <label>Preço de custo unitário (R$) <input name="custo" inputmode="decimal" pattern="[0-9]+([.,][0-9]+)?" title="Digite apenas números, por exemplo: 25,90" required></label>
       <label>Preço de venda unitário (R$) <input name="venda" inputmode="decimal" pattern="[0-9]+([.,][0-9]+)?" title="Digite apenas números, por exemplo: 25,90" required></label>
     </div>
-    <!-- Botão de envio do formulário -->
     <div class="botoes"><button class="destaque" type="submit">Adicionar ao estoque</button></div>
   </form>
 </section>
 
 </main>
-
-<script>
-function iniciarEdicaoPeca(id) {
-  document.getElementById("peca-view-" + id).classList.add("oculto");
-  const editRow = document.getElementById("peca-edit-" + id);
-  editRow.classList.remove("oculto");
-  const primeiroInput = editRow.querySelector('input[name="nome"]');
-  if (primeiroInput) {
-    primeiroInput.focus();
-  }
-}
-
-function cancelarEdicaoPeca(id) {
-  const editRow = document.getElementById("peca-edit-" + id);
-  const inputs = editRow.querySelectorAll("input[data-original]");
-  inputs.forEach(function(input) {
-    input.value = input.getAttribute("data-original");
-    input.classList.remove("campo-erro");
-  });
-  const avisos = editRow.querySelectorAll(".aviso-campo");
-  avisos.forEach(function(aviso) {
-    aviso.remove();
-  });
-  editRow.classList.add("oculto");
-  document.getElementById("peca-view-" + id).classList.remove("oculto");
-}
-</script>
 
 </body>
 </html>
