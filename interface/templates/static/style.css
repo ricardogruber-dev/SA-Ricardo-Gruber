@@ -74,6 +74,11 @@ form:has(#problema option[value="outro"]:checked) #outro-campo{display:block}
 /* Aviso exibido só depois de uma tentativa de cadastro com a descrição vazia */
 .aviso-campo{color:var(--erro);font-size:.9em;margin-top:4px;display:block}
 .campo-erro{border-color:var(--erro)}
+/* Aviso da mão de obra no detalhe do conserto
+   fica oculto e só aparece depois de tentar concluir com o campo vazio */
+.aviso-mao-obra{display:none;color:var(--erro);font-size:.9em;font-weight:400;margin-top:4px}
+input[name="mao_de_obra"]:user-invalid{border-color:var(--erro)}
+input[name="mao_de_obra"]:user-invalid + .aviso-mao-obra{display:block}
 
 /* Tabelas */
 .rolagem{overflow-x:auto}

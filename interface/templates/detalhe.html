@@ -144,11 +144,11 @@
     <!-- Formulário para atualizar o status do conserto ou encerrá-lo informando a mão de obra -->
     <form class="caixa" action="{{ url_for('detalhe_conserto', conserto_id=conserto.id) }}" method="post" style="margin-top:1rem">
       <h2>O que deseja fazer com este conserto?</h2>
-      <label style="max-width:260px">Valor da mão de obra (R$) <input name="mao_de_obra" inputmode="decimal"></label>
+      <label style="max-width:260px">Valor da mão de obra (R$) <input name="mao_de_obra" inputmode="decimal" required title="Digite o valor da mão de obra para concluir o conserto"><span class="aviso-mao-obra">Você precisa digitar o valor da mão de obra para concluir este conserto.</span></label>
       <span class="dica">A mão de obra é pedida somente ao concluir. Conserto concluído não aceita novas peças nem comentários.</span>
-      <!-- Cada botão envia um valor diferente para o parâmetro 'acao' -->
+      <!-- Cada botão envia um valor diferente para o parâmetro 'acao'. O "formnovalidate" deixa o botão de manter ignorar o campo obrigatório -->
       <div class="botoes">
-        <button class="sec" type="submit" name="acao" value="manter">Deixar em execução</button>
+        <button class="sec" type="submit" name="acao" value="manter" formnovalidate>Deixar em execução</button>
         <button class="destaque" type="submit" name="acao" value="concluir">Concluir conserto</button>
       </div>
     </form>

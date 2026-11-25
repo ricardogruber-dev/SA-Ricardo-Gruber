@@ -998,10 +998,14 @@ def criar_app() -> Flask:
                         flash("Conserto mantido em execução.", "sucesso")
                 # --- CONCLUIR CONSERTO ---
                 elif acao == "concluir":
+                    texto_mao_de_obra = request.form.get("mao_de_obra", "").strip()
+                    # Avisa com uma mensagem clara quando o campo foi deixado em branco.
+                    if not texto_mao_de_obra:
+                        raise DadoInvalido(
+                            "Informe o valor da mão de obra para concluir o conserto."
+                        )
                     # Valida o valor antes de concluir o atendimento.
-                    mao_de_obra = validar_dinheiro(
-                        request.form.get("mao_de_obra", ""), "Mão de obra"
-                    )
+                    mao_de_obra = validar_dinheiro(texto_mao_de_obra, "Mão de obra")
                     oficina.concluir_conserto(conserto_id, mao_de_obra)
                     flash("Conserto concluído com sucesso.", "sucesso")
                 else:
@@ -1087,5 +1091,4 @@ app = criar_app()
 # Executa o servidor de desenvolvimento somente quando este arquivo
 # é executado diretamente, e não quando é importado por outro módulo.
 if __name__ == "__main__":
-    print(f"Pasta de dados: {PASTA_DADOS}")
     app.run(debug=True, use_reloader=False)
