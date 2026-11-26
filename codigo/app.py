@@ -887,6 +887,70 @@ class Oficina:
             self.salvar("consertos", "estoque", "movimentacoes")
         return item
 
+    def remover_peca_conserto(
+        self, conserto_id: int, indice_item: int
+    ) -> ItemUsado:
+        """
+        Remove uma peça utilizada de um conserto ativo e devolve
+        sua quantidade ao estoque, registrando a entrada no histórico.
+        """
+        conserto = self.buscar_conserto_por_id(conserto_id)
+        if conserto.situacao not in (
+            SituacaoConserto.PENDENTE,
+            SituacaoConserto.EM_EXECUCAO,
+        ):
+            raise OperacaoNaoPermitida(
+                "Não é possível alterar as peças de um conserto concluído ou cancelado."
+            )
+        if indice_item < 0 or indice_item >= len(conserto.pecas_usadas):
+            raise RegistroNaoEncontrado("Item de peça não encontrado neste conserto.")
+
+        with self._transacao():
+            item = conserto.pecas_usadas.pop(indice_item)
+
+            peca_estoque = next(
+                (p for p in self.estoque if p.id == item.peca_id),
+                None,
+            )
+            if peca_estoque is None:
+                peca_estoque = next(
+                    (
+                        p for p in self.estoque
+                        if p.nome.casefold() == item.nome.casefold()
+                    ),
+                    None,
+                )
+
+            if peca_estoque is not None:
+                peca_estoque.quantidade += item.quantidade
+                peca_id_mov = peca_estoque.id
+                nome_peca_mov = peca_estoque.nome
+            else:
+                nova_peca = Peca(
+                    id=item.peca_id,
+                    nome=item.nome,
+                    quantidade=item.quantidade,
+                    preco_custo=item.preco_unitario,
+                    preco_venda=item.preco_unitario,
+                )
+                self.estoque.append(nova_peca)
+                peca_id_mov = nova_peca.id
+                nome_peca_mov = nova_peca.nome
+
+            self.movimentacoes.append(
+                MovimentacaoEstoque(
+                    peca_id=peca_id_mov,
+                    nome_peca=nome_peca_mov,
+                    tipo="Entrada",
+                    quantidade=item.quantidade,
+                    motivo=f"Remoção de peça do conserto #{conserto.id:04d}",
+                    conserto_id=conserto.id,
+                )
+            )
+            self.salvar("consertos", "estoque", "movimentacoes")
+
+        return item
+
     def calcular_valor_em_estoque(self) -> Decimal:
         """Calcula o valor total de custo das peças disponíveis."""
         return sum(
@@ -1037,6 +1101,16 @@ def criar_app() -> Flask:
                     flash(
                         f"Peça registrada: {item.nome} x{item.quantidade} "
                         f"({formatar_moeda(item.subtotal)}).",
+                        "sucesso",
+                    )
+                elif acao == "remover_peca":
+                    indice_item = int(request.form.get("indice_item", "-1"))
+                    item_removido = oficina.remover_peca_conserto(
+                        conserto_id, indice_item
+                    )
+                    flash(
+                        f"Peça '{item_removido.nome}' (x{item_removido.quantidade}) "
+                        "removida do conserto e devolvida ao estoque.",
                         "sucesso",
                     )
                 elif acao == "comentar":

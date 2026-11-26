@@ -90,7 +90,17 @@
   <div class="caixa">
     <h2>Peças utilizadas</h2>
     <div class="rolagem"><table>
-      <thead><tr><th>Peça</th><th class="num">Qtd.</th><th class="num">Unitário</th><th class="num">Subtotal</th></tr></thead>
+      <thead>
+        <tr>
+          <th>Peça</th>
+          <th class="num">Qtd.</th>
+          <th class="num">Unitário</th>
+          <th class="num">Subtotal</th>
+          {% if conserto_ativo %}
+            <th class="num">Ações</th>
+          {% endif %}
+        </tr>
+      </thead>
       <tbody>
         <!-- Lista as peças registradas ou exibe aviso caso nenhuma tenha sido usada -->
         {% if conserto.pecas_usadas %}
@@ -101,10 +111,19 @@
               <!-- Usa a função auxiliar formatar_moeda para exibir os valores em R$ -->
               <td class="num">{{ formatar_moeda(item.preco_unitario) }}</td>
               <td class="num">{{ formatar_moeda(item.subtotal) }}</td>
+              {% if conserto_ativo %}
+                <td class="num">
+                  <form action="{{ url_for('detalhe_conserto', conserto_id=conserto.id) }}" method="post" style="display:inline" onsubmit="return confirm('Remover {{ item.nome }} (x{{ item.quantidade }}) deste conserto? A quantidade será devolvida ao estoque.');">
+                    <input type="hidden" name="acao" value="remover_peca">
+                    <input type="hidden" name="indice_item" value="{{ loop.index0 }}">
+                    <button type="submit" class="perigo btn-sm">Excluir</button>
+                  </form>
+                </td>
+              {% endif %}
             </tr>
           {% endfor %}
         {% else %}
-          <tr><td colspan="4">Nenhuma peça utilizada.</td></tr>
+          <tr><td colspan="{{ 5 if conserto_ativo else 4 }}">Nenhuma peça utilizada.</td></tr>
         {% endif %}
       </tbody>
     </table></div>

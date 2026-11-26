@@ -59,8 +59,19 @@
             <!-- Linha de visualização -->
             <tr id="peca-view-{{ p.id }}" {% if tem_erro_linha %}style="display:none"{% endif %}>
               <td>{{ p.id }}</td>
-              <td>{{ p.nome }}</td>
-              <td class="num">{{ p.quantidade }}</td>
+              <td>
+                {{ p.nome }}
+                {% if p.quantidade == 0 %}
+                  <span class="selo s-cancelado" style="margin-left:.4rem">Sem estoque</span>
+                {% endif %}
+              </td>
+              <td class="num">
+                {% if p.quantidade == 0 %}
+                  <strong style="color:var(--erro)">0</strong>
+                {% else %}
+                  {{ p.quantidade }}
+                {% endif %}
+              </td>
               <td class="num">{{ formatar_moeda(p.preco_custo) }}</td>
               <td class="num">{{ formatar_moeda(p.preco_venda) }}</td>
               <td style="text-align:right;white-space:nowrap">
